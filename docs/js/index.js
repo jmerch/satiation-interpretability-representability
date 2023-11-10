@@ -287,8 +287,8 @@ function make_slides(f) {
 		  $(".sentence_reminder").show();
 		},
     button : function() {
-			var button1 = !$("#button1").is(":hidden");
-			var button2 = !$("#button2").is(":hidden");
+			var button1 = !$("#button1-1").is(":hidden");
+			var button2 = !$("#button2-1").is(":hidden");
 			var button3 = !button1 & !button2;
       if (exp.sliderPost == null) {
         $(".err").show();
@@ -309,31 +309,38 @@ function make_slides(f) {
 					console.log(exp.acceptT);
 					$(".instruct").hide();
 					//console.log("Button1");
-					$(".interpret").show();
+				//	$(".interpret").show();
 					$(".rating").hide();
+					$(".text_response").show();
+					$("#forgot-sentence").show();
+					$(".prompt").hide();
 				} else if (button2){
 					//var response = $("input[type='radio'][name='interpret']:checked").val();
 					//console.log(response);
-					if (exp.sliderPost_interp == null) {
-		        $(".err").show();
-		      } else {
-						exp.meaning_confidence = exp.sliderPost_interp;
-						exp.confidenceT = Date.now() - exp.slide_startT - exp.acceptT - exp.startT;
-					  $(".errinterp").hide();
-						$(".interpret").hide();
-						$(".prompt").hide();
-						$(".text_response").show();
-						$("#forgot-sentence").show();
-						$(".interp_error").hide();
+					var paraphrase = $("#paraphrase").val().trim();
+					console.log(paraphrase);
+					console.log($(".stim_sentence")[0].innerHTML);
+					if (paraphrase == "" || repeatStim(paraphrase, $(".stim_sentence")[0].innerHTML)) {
+						$(".err_write").show();
+					} else {
+						exp.paraphraseT = Date.now() - exp.slide_startT - exp.acceptT - exp.startT;
+						$(".interpret").show();
+						$(".text_response").hide();
+						$("#forgot-sentence").hide();
+						 $(".sentence_reminder").hide();
+						$(".prompt").show();
 						}
 					} else if (button3) {
-						var paraphrase = $("#paraphrase").val().trim();
-						console.log(paraphrase);
-						console.log($(".stim_sentence")[0].innerHTML);
-						if (paraphrase == "" || repeatStim(paraphrase, $(".stim_sentence")[0].innerHTML)) {
-							$(".err_write").show();
+						if (exp.sliderPost_interp == null) {
+							$(".err").show();
 						} else {
-							exp.paraphraseT = Date.now() - exp.slide_startT - exp.acceptT - exp.confidenceT - exp.startT;
+							exp.meaning_confidence = exp.sliderPost_interp;
+							exp.confidenceT = Date.now() - exp.slide_startT - exp.paraphraseT - exp.acceptT - exp.startT;
+						//	$(".errinterp").hide();
+						//	$(".interpret").hide();
+						//	$(".prompt").hide();
+
+						//	$(".interp_error").hide();
         /* use _stream.apply(this); if and only if there is
         "present" data. (and only *after* responses are logged) */
 							this.log_responses();
@@ -343,7 +350,7 @@ function make_slides(f) {
 				}
 		},
 
-    init_sliders : function() {
+		init_sliders : function() {
       utils.make_slider("#practice_slider_1", function(event, ui) {
         exp.sliderPost = ui.value;
       });
@@ -388,7 +395,6 @@ function make_slides(f) {
       and for each of these, present_handle will be run.) */
     present : [1],
 
-
     //this gets run only at the beginning of the block
     present_handle : function(stim) {
 			$(".rating2").show();
@@ -400,7 +406,7 @@ function make_slides(f) {
 			$(".interpret2").hide();
 		//	$(".errinterp").hide();
 			$("#paraphrase2").val("");
-			$(".prompt").show();
+			//$(".prompt").show();
 			$(".sentence_reminder2").hide();
 		//	$(".interp_err").hide();
 			//this.stim = stim;
@@ -417,55 +423,60 @@ function make_slides(f) {
 
 
 		button : function() {
-			var button1 = !$(".rating2").is(":hidden");
-			var button2 = !$(".interpret2").is(":hidden");
+			var button1 = !$("#button1-2").is(":hidden");
+			var button2 = !$("#button2-2").is(":hidden");
 			var button3 = !button1 & !button2;
-      if (exp.sliderPost == null) {
-        $(".err").show();
-      }
-      else {
-				  $(".err").hide();
-				  $(".errbad").hide();
-        //this.log_responses();
+			if (exp.sliderPost == null) {
+				$(".err").show();
+			}
+			else {
+				$(".err").hide();
+				$(".errgood").hide();
+				//this.log_responses();
 				if (button1) {
 					exp.acceptability = exp.sliderPost;
 					exp.acceptT = (Date.now() - exp.slide_startT - exp.startT);
 					console.log(exp.acceptT);
 					$(".instruct").hide();
 					//console.log("Button1");
-					$(".interpret2").show();
+				//	$(".interpret").show();
 					$(".rating2").hide();
+					$(".text_response2").show();
+					$("#forgot-sentence").show();
+					$(".prompt").hide();
 				} else if (button2){
-					//console.log("Button2");
-					//var response = $("input[type='radio'][name='interpret2']:checked").val();
-					if (exp.sliderPost_interp == null) {
-		        $(".err").show();
-		      } else {
-						exp.meaning_confidence = exp.sliderPost_interp;
-						exp.confidenceT = Date.now() - exp.slide_startT - exp.acceptT - exp.startT;
-					  $(".errinterp").hide();
-						$(".interpret2").hide();
-						$(".prompt").hide();
-						$(".text_response2").show();
-						$("#forgot-sentence").show();
-						$(".interp_err").hide();
-						$(".err").hide();
+					//var response = $("input[type='radio'][name='interpret']:checked").val();
+					//console.log(response);
+					var paraphrase = $("#paraphrase2").val().trim();
+					console.log(paraphrase);
+					console.log($(".stim_sentence")[0].innerHTML);
+					if (paraphrase == "" || repeatStim(paraphrase, $(".stim_sentence")[0].innerHTML)) {
+						$(".err_write").show();
+					} else {
+						exp.paraphraseT = Date.now() - exp.slide_startT - exp.acceptT - exp.startT;
+						$(".interpret2").show();
+						$(".text_response2").hide();
+						$("#forgot-sentence").hide();
+						$(".sentence_reminder2").hide();
+						$(".prompt").show();
 						}
 					} else if (button3) {
-							console.log("Button3");
-						var paraphrase = $("#paraphrase2").val().trim();
-						console.log(paraphrase);
-						console.log($(".stim_sentence")[0].innerHTML);
-						if (paraphrase == "" || repeatStim(paraphrase, $(".stim_sentence")[0].innerHTML)) {
-							$(".err_write").show();
+						if (exp.sliderPost_interp == null) {
+							$(".err").show();
 						} else {
-							exp.paraphraseT = Date.now() - exp.slide_startT - exp.acceptT - exp.confidenceT - exp.startT;
-        /* use _stream.apply(this); if and only if there is
-        "present" data. (and only *after* responses are logged) */
+							exp.meaning_confidence = exp.sliderPost_interp;
+							exp.confidenceT = Date.now() - exp.slide_startT - exp.paraphraseT - exp.acceptT - exp.startT;
+						//	$(".errinterp").hide();
+						//	$(".interpret").hide();
+						//	$(".prompt").hide();
+
+						//	$(".interp_error").hide();
+				/* use _stream.apply(this); if and only if there is
+				"present" data. (and only *after* responses are logged) */
 							this.log_responses();
 							_stream.apply(this);
 						}
-    			}
+					}
 				}
 		},
 		showPrompt : function() {
@@ -550,61 +561,66 @@ function make_slides(f) {
 
 
 		button : function() {
-			var button1 = !$(".rating3").is(":hidden");
-			var button2 = !$(".interpret3").is(":hidden");
+			var button1 = !$("#button1-3").is(":hidden");
+			var button2 = !$("#button2-3").is(":hidden");
 			var button3 = !button1 & !button2;
-      if (exp.sliderPost == null) {
-        $(".err").show();
-      }
-      else if (exp.sliderPost > 0.5) {
-        exp.first_response_wrong = 1;
-        exp.first_response_value =exp.sliderPost;
-        exp.attempts = exp.attempts + 1;
-        $(".errbad").show();
-      }
-      else {
-				  $(".err").hide();
-				  $(".errbad").hide();
-        //this.log_responses();
+			if (exp.sliderPost == null) {
+				$(".err").show();
+			}
+			else if (button1 & exp.sliderPost >= 0.5) {
+		        exp.first_response_wrong = 1;
+		        exp.first_response_value = exp.sliderPost;
+		        exp.attempts = exp.attempts + 1;
+		        $(".errbad").show();
+		  }
+			else {
+				$(".err").hide();
+				$(".errbad").hide();
+				//this.log_responses();
 				if (button1) {
 					exp.acceptability = exp.sliderPost;
 					exp.acceptT = (Date.now() - exp.slide_startT - exp.startT);
 					console.log(exp.acceptT);
 					$(".instruct").hide();
 					//console.log("Button1");
-					$(".interpret3").show();
+				//	$(".interpret").show();
 					$(".rating3").hide();
-				} else if (button2) {
-					//console.log("Button2");
-					//var response = $("input[type='radio'][name='interpret3']:checked").val()
-					if (exp.sliderPost_interp == null) {
-						$(".err").show();
+					$(".text_response3").show();
+					$("#forgot-sentence").show();
+					$(".prompt").hide();
+				} else if (button2){
+					//var response = $("input[type='radio'][name='interpret']:checked").val();
+					//console.log(response);
+					var paraphrase = $("#paraphrase3").val().trim();
+					console.log(paraphrase);
+					console.log($(".stim_sentence")[0].innerHTML);
+					if (paraphrase == "" || repeatStim(paraphrase, $(".stim_sentence")[0].innerHTML)) {
+						$(".err_write").show();
 					} else {
-						exp.meaning_confidence = exp.sliderPost_interp;
-						exp.confidenceT = Date.now() - exp.slide_startT - exp.acceptT - exp.startT;
-					  $(".errinterp").hide();
-						$(".interpret3").hide();
-						$(".prompt").hide();
-						$(".text_response3").show();
-						$("#forgot-sentence").show();
-						$(".interp_err").hide();
-						$(".err").hide();
+						exp.paraphraseT = Date.now() - exp.slide_startT - exp.acceptT - exp.startT;
+						$(".interpret3").show();
+						$(".text_response3").hide();
+						$("#forgot-sentence").hide();
+						 $(".sentence_reminder3").hide();
+						$(".prompt").show();
 						}
 					} else if (button3) {
-							console.log("Button3");
-						var paraphrase = $("#paraphrase3").val().trim();
-						console.log(paraphrase);
-						console.log($(".stim_sentence")[0].innerHTML);
-						if (paraphrase == "" || repeatStim(paraphrase, $(".stim_sentence")[0].innerHTML)) {
-							$(".err_write").show();
+						if (exp.sliderPost_interp == null) {
+							$(".err").show();
 						} else {
-        /* use _stream.apply(this); if and only if there is
-        "present" data. (and only *after* responses are logged) */
-						exp.paraphraseT = Date.now() - exp.slide_startT - exp.acceptT - exp.confidenceT - exp.startT;
+							exp.meaning_confidence = exp.sliderPost_interp;
+							exp.confidenceT = Date.now() - exp.slide_startT - exp.paraphraseT - exp.acceptT - exp.startT;
+						//	$(".errinterp").hide();
+						//	$(".interpret").hide();
+						//	$(".prompt").hide();
+
+						//	$(".interp_error").hide();
+				/* use _stream.apply(this); if and only if there is
+				"present" data. (and only *after* responses are logged) */
 							this.log_responses();
 							_stream.apply(this);
 						}
-    			}
+					}
 				}
 		},
 		showPrompt : function() {
@@ -688,57 +704,65 @@ function make_slides(f) {
 			exp.slide_startT = Date.now() - exp.startT;
     },
 
+
+
+
 		button : function() {
-			var button1 = !$(".rating_main").is(":hidden");
-			var button2 = !$(".interpret_main").is(":hidden");
+			var button1 = !$("#button1-m").is(":hidden");
+			var button2 = !$("#button2-m").is(":hidden");
 			var button3 = !button1 & !button2;
-      if (exp.sliderPost == null) {
-        $(".err").show();
-      }
-      else {
-        //this.log_responses();
+			if (exp.sliderPost == null) {
+				$(".err").show();
+			}
+			else {
+				$(".err").hide();
+				//this.log_responses();
 				if (button1) {
 					exp.acceptability = exp.sliderPost;
-					exp.acceptT = Date.now() - exp.slide_startT - exp.startT;
+					exp.acceptT = (Date.now() - exp.slide_startT - exp.startT);
 					console.log(exp.acceptT);
-					//$(".instruct").hide();
-					console.log("Button1");
-					$(".interpret_main").show();
+					$(".instruct").hide();
+					//console.log("Button1");
+				//	$(".interpret").show();
 					$(".rating_main").hide();
-					$(".err").hide();
+					$(".text_response_main").show();
+			//		$("#forgot-sentence").show();
+					$(".target").hide();
 				} else if (button2){
-						$(".err").hide();
-					//console.log("Button2");
 					//var response = $("input[type='radio'][name='interpret']:checked").val();
-					if (exp.sliderPost_interp == null) {
-		        $(".err").show();
-		      }else {
-						exp.meaning_confidence = exp.sliderPost_interp;
-						exp.confidenceT = Date.now() - exp.slide_startT - exp.acceptT - exp.startT;
-						$(".interpret_main").hide();
-						$(".interp_err").hide();
-						$(".target").hide();
-						$(".text_response_main").show();
-						$(".err").hide();
-					}
-				} else if (button3) {
-						console.log("Button3");
-						var paraphrase = $("#paraphrase_main").val().trim();
+					//console.log(response);
+					var paraphrase = $("#paraphrase_main").val().trim();
+					console.log(paraphrase);
+					console.log($(".stim_sentence")[0].innerHTML);
+					if (paraphrase == "" || repeatStim(paraphrase, $(".stim_sentence")[0].innerHTML)) {
+						$(".err_write").show();
+					} else {
 						exp.paraphrase = paraphrase;
-						console.log(paraphrase);
-						//console.log($(".stim_sentence")[0].innerHTML);
-						if (paraphrase == "" || repeatStim(paraphrase, this.stim.Target)) {
-							$(".err_write").show();
+						exp.paraphraseT = Date.now() - exp.slide_startT - exp.acceptT - exp.startT;
+						$(".interpret_main").show();
+						$(".text_response_main").hide();
+
+					//$("#forgot-sentence").hide();
+					//	 $(".sentence_reminder").hide();
+						$(".target").show();
+						}
+					} else if (button3) {
+						if (exp.sliderPost_interp == null) {
+							$(".err").show();
 						} else {
-        /* use _stream.apply(this); if and only if there is
-        "present" data. (and only *after* responses are logged) */
-							exp.paraphraseT = Date.now() - exp.slide_startT - exp.acceptT - exp.confidenceT - exp.startT;
+							exp.meaning_confidence = exp.sliderPost_interp;
+							exp.confidenceT = Date.now() - exp.slide_startT - exp.paraphraseT - exp.acceptT - exp.startT;
+						//	$(".errinterp").hide();
+						//	$(".interpret").hide();
+						//	$(".prompt").hide();
+
+						//	$(".interp_error").hide();
+				/* use _stream.apply(this); if and only if there is
+				"present" data. (and only *after* responses are logged) */
 							this.log_responses();
 							_stream.apply(this);
-							console.log(exp.data_trials);
-							//$("target").show()
 						}
-    			}
+					}
 				}
 		},
 
