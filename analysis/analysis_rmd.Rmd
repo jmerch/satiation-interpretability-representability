@@ -1,0 +1,289 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# **Introduction**
+
+This experiment studies the "satiation effect": the phenomenon whereby acceptability ratings increase throughout repeated exposure. It has been observed that different sentence types are variably sensitive to the satiation effect. This raises an important question: Why do certain sentence types satiate faster than others? (i.e. What factors modulate the rate of satiation? )
+
+In this experiment, we aim to test the following hypotheses:
+
+(1) Satiation rate is positively predicted by the representability of sentence structure (which can be measured by the inverse entropy of paraphrase meanings, or the confidence ratings)
+
+(2) Satiation rate is negatively predicted by the availability of meaning-equivalent alternative forms (which can be measured by the entropy of paraphrase forms)
+
+## **Experiment**
+
+There are two experiment groups (each N=\~45):
+
+In **group A**, each trial consist of the following:
+
+(1) Read a test sentence (one of the 11 conditions)
+
+(2) Rate the acceptability of the sentence
+
+(3) Rate their confidence in their interpretation
+
+(4) Paraphrase
+
+In **group B**, each trial consist of the following:
+
+(1) Read a test sentence (one of the 11 conditions)
+
+(2) Rate the acceptability of the sentence
+
+(3) Paraphrase
+
+(4) Rate their confidence in their interpretation
+
+Both groups did the same set of tasks, but in different order. We hope we can use this manipulation to figure out the best experiment design for the full study.
+
+## Example Stimuli
+
+**Adjunct island**: What did the student attend lecture because she read?
+
+**S-V agreement error**: The clown were invited to the party by the host.
+
+**Binding condition violation**: The bride thinks that the groom saw herself.
+
+**CSC violation**: What did the horse eat apples and?
+
+**Head directionality error**: The child surely the chocolate cake ate.
+
+**LBC violation**: How many did you see cookies in the jar?
+
+**Unlicensed NPI**: The spy saw anything yesterday.
+
+**Subcategorization error**: The policeman relied for his instincts to catch the thief.
+
+**Subject island**: What did a bottle of spill on the floor?
+
+**Grammatical fillers**: The patient knew that the receptionist disliked him.
+
+**Word-salad fillers**: Mechanic the that can power biofuel the does believe what ?
+
+```{r}
+#Load data files
+this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(this.dir)
+
+library(plyr)
+library(dplyr)
+library(reshape)
+library(ggplot2)
+library(gtable)
+library(lme4)
+library(tidyverse)
+library(simr)
+library(lmerTest)
+library(brms)
+library(bootstrap)
+library(ggpubr)
+library(broom)    
+
+`%notin%` <- Negate(`%in%`)
+
+#Read data file#
+raw_data_path1 <- "../pilot_2a_ling145/pilot_2a_ling145-trials.csv"
+data1<-read.csv(raw_data_path1)
+
+raw_data_path2 <- "../pilot_2b_ling145/pilot_2b_ling145-trials.csv"
+data2<-read.csv(raw_data_path2)
+
+```
+
+# Visualization
+
+## Satiation plots
+
+Let's first take a look at the overall satiation plot for group A
+
+```{r}
+data_no_practice1 = data1 %>% 
+  filter(block_number != "practice") %>%
+  mutate(block_number = as.numeric(block_number))
+
+trial_means1 = data_no_practice1 %>%
+  group_by(block_number,condition) %>%
+  summarise(rating = mean(rating))
+
+satiation_plot1 <- ggplot(data_no_practice1, aes(x=block_number, y=rating, color = condition, fill = condition)) + 
+  geom_point(data=trial_means1,alpha=.9) + 
+ # scale_color_manual(values=cbPalette) +
+#  scale_fill_manual(values=cbPalette) +
+  xlab("Presentation Order") +
+  ylab("Acceptability rating")+
+  geom_smooth(method=lm, aes(fill=condition))+theme_bw()
+
+satiation_plot_faceted1 <- satiation_plot1 + facet_wrap(~condition, scales = "fixed")
+satiation_plot_faceted1
+
+```
+
+Let's take a look at the same plot for group B:
+
+```{r}
+data_no_practice2 = data2 %>% 
+  filter(block_number != "practice") %>%
+  mutate(block_number = as.numeric(block_number))
+
+trial_means2 = data_no_practice2 %>%
+  group_by(block_number,condition) %>%
+  summarise(rating = mean(rating))
+
+satiation_plot2 <- ggplot(data_no_practice2, aes(x=block_number, y=rating, color = condition, fill = condition)) + 
+  geom_point(data=trial_means1,alpha=.9) + 
+  # scale_color_manual(values=cbPalette) +
+  #  scale_fill_manual(values=cbPalette) +
+  xlab("Presentation Order") +
+  ylab("Acceptability rating")+
+  geom_smooth(method=lm, aes(fill=condition))+theme_bw()
+#satiation_plot2
+
+satiation_plot_faceted2 <- satiation_plot2 + facet_wrap(~condition, scales = "fixed")
+satiation_plot_faceted2
+
+
+```
+
+Here's a combined plot for the two groups:
+
+```{r}
+combined_data = rbind(data_no_practice1,data_no_practice2)
+trial_means = combined_data %>%
+  group_by(block_number,condition) %>%
+  summarise(rating = mean(rating))
+
+satiation_plot <- ggplot(combined_data, aes(x=block_number, y=rating, color = condition, fill = condition)) + 
+  geom_point(data=trial_means,alpha=.9) + 
+  # scale_color_manual(values=cbPalette) +
+  #  scale_fill_manual(values=cbPalette) +
+  xlab("Presentation Order") +
+  ylab("Acceptability rating")+
+  geom_smooth(method=lm, aes(fill=condition))+theme_bw()
+#satiation_plot2
+
+satiation_plot_faceted <- satiation_plot + facet_wrap(~condition, scales = "fixed")
+satiation_plot_faceted
+
+```
+
+## Confidence-Slope plots
+
+Here's a plot of the satiation rate for each condition-participant combination against the confidence rating (Group A):
+
+```{r}
+slope_data1 = data_no_practice1 %>%
+  group_by(workerid, condition)%>%
+  do(tidy(lm(rating ~ block_number, data = .))) %>% 
+  filter(term == "block_number") %>%    
+  select(workerid, condition, estimate) 
+
+merged_data1 <- data_no_practice1 %>%
+  left_join(slope_data1, by = c("workerid", "condition"))
+
+merged1_trial_means= merged_data1 %>%
+  group_by(workerid, condition)%>%
+  summarise(estimate = mean(estimate), meaning_confidence = mean(meaning_confidence))
+
+confidence_slope_plot1 <- ggplot(merged_data1, aes(x=meaning_confidence, y=estimate, color = condition, fill = condition)) + 
+#  geom_point(data=merged1_trial_means,alpha=.9) + 
+  # scale_color_manual(values=cbPalette) +
+  #  scale_fill_manual(values=cbPalette) +
+  xlab("Confidence Rating") +
+  ylab("Satiation Rate")+
+  geom_smooth(method=lm)+theme_bw()
+confidence_slope_plot1
+
+```
+
+Let's facet this by condition so that the plot is easier to read:
+
+```{r}
+
+confidence_slope_faceted1 <- confidence_slope_plot1 + facet_wrap(~condition, scales = "fixed")+theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+confidence_slope_faceted1
+```
+
+Now Let's do the same for Group B:
+
+```{r}
+slope_data2 = data_no_practice2 %>%
+  group_by(workerid, condition)%>%
+  do(tidy(lm(rating ~ block_number, data = .))) %>% 
+  filter(term == "block_number") %>%    
+  select(workerid, condition, estimate) 
+
+merged_data2 <- data_no_practice2 %>%
+  left_join(slope_data2, by = c("workerid", "condition"))
+
+merged2_trial_means= merged_data2 %>%
+  group_by(workerid, condition)%>%
+  summarise(estimate = mean(estimate), meaning_confidence = mean(meaning_confidence))
+
+confidence_slope_plot2 <- ggplot(merged_data2, aes(x=meaning_confidence, y=estimate, color = condition, fill = condition)) + 
+  #  geom_point(data=merged1_trial_means,alpha=.9) + 
+  # scale_color_manual(values=cbPalette) +
+  #  scale_fill_manual(values=cbPalette) +
+  xlab("Confidence Rating") +
+  ylab("Satiation Rate")+
+  geom_smooth(method=lm)+theme_bw()
+confidence_slope_plot2
+
+```
+
+Same as before, let's facet this by condition:
+
+```{r}
+confidence_slope_faceted2 <- confidence_slope_plot2 + facet_wrap(~condition, scales = "fixed")+theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+confidence_slope_faceted2
+```
+
+Now, let's combined the two groups:
+
+```{r}
+slope_data = combined_data %>%
+  group_by(workerid, condition)%>%
+  do(tidy(lm(rating ~ block_number, data = .))) %>% 
+  filter(term == "block_number") %>%    
+  select(workerid, condition, estimate) 
+
+merged_data <- combined_data %>%
+  left_join(slope_data, by = c("workerid", "condition"))
+
+merged_trial_means= merged_data %>%
+  group_by(workerid, condition)%>%
+  summarise(estimate = mean(estimate), meaning_confidence = mean(meaning_confidence))
+
+confidence_slope_plot <- ggplot(merged_data, aes(x=meaning_confidence, y=estimate, color = condition, fill = condition)) + 
+#  geom_point(data=merged1_trial_means,alpha=.9) + 
+  # scale_color_manual(values=cbPalette) +
+  #  scale_fill_manual(values=cbPalette) +
+  xlab("Confidence Rating") +
+  ylab("Satiation Rate")+
+  geom_smooth(method=lm)+theme_bw()
+confidence_slope_plot
+
+```
+
+Here's the faceted version of the combined plot:
+
+```{r}
+confidence_slope_faceted <- confidence_slope_plot + facet_wrap(~condition, scales = "fixed")+theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+confidence_slope_faceted
+```
+
+# Analysis 
+
+Which conditions satiated?
+
+```{r}
+combined_data$condition <- factor(combined_data$condition)
+combined_data$condition <- relevel(combined_data$condition, ref = "gram")
+
+
+satiation_model <- lmer(rating ~ block_number*condition + 
+                          (1+block_number|workerid) , data = combined_data)
+summary(satiation_model)
+```
