@@ -3,6 +3,28 @@ title: "R Notebook"
 output: html_notebook
 ---
 
+```{r}
+#Load data files
+this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(this.dir)
+
+library(plyr)
+library(dplyr)
+library(reshape)
+library(ggplot2)
+library(gtable)
+library(lme4)
+library(tidyverse)
+library(simr)
+library(lmerTest)
+library(brms)
+library(bootstrap)
+library(ggpubr)
+library(broom)    
+
+`%notin%` <- Negate(`%in%`)
+```
+
 # **Introduction**
 
 This experiment studies the "satiation effect": the phenomenon whereby acceptability ratings increase throughout repeated exposure. It has been observed that different sentence types are variably sensitive to the satiation effect. This raises an important question: Why do certain sentence types satiate faster than others? (i.e. What factors modulate the rate of satiation? )
@@ -15,7 +37,7 @@ In this experiment, we aim to test the following hypotheses:
 
 ## **Experiment**
 
-There are two experiment groups (each N=\~45):
+There are two experiment groups:
 
 In **group A**, each trial consist of the following:
 
@@ -27,7 +49,7 @@ In **group A**, each trial consist of the following:
 
 (4) Paraphrase
 
-In **group B**, each trial consist of the following:
+In **group B (N=34)**, each trial consist of the following:
 
 (1) Read a test sentence (one of the 11 conditions)
 
@@ -64,33 +86,16 @@ Both groups did the same set of tasks, but in different order. We hope we can us
 **Word-salad fillers**: Mechanic the that can power biofuel the does believe what ?
 
 ```{r}
-#Load data files
-this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
-setwd(this.dir)
-
-library(plyr)
-library(dplyr)
-library(reshape)
-library(ggplot2)
-library(gtable)
-library(lme4)
-library(tidyverse)
-library(simr)
-library(lmerTest)
-library(brms)
-library(bootstrap)
-library(ggpubr)
-library(broom)    
-
-`%notin%` <- Negate(`%in%`)
-
 #Read data file#
 raw_data_path1 <- "../pilot_2a_ling145/pilot_2a_ling145-trials.csv"
 data1<-read.csv(raw_data_path1)
+non_native_1 = c(46,127,57,36,39,63,113,128)
+data1<- subset(data1, workerid %notin% non_native_1)
 
 raw_data_path2 <- "../pilot_2b_ling145/pilot_2b_ling145-trials.csv"
 data2<-read.csv(raw_data_path2)
-
+non_native_2 = c(118, 81, 96, 104, 124,64,25,31,38,107)
+data2<- subset(data2, workerid %notin% non_native_2)
 ```
 
 # Visualization
@@ -245,8 +250,9 @@ Now, let's combined the two groups:
 ```{r}
 slope_data = combined_data %>%
   group_by(workerid, condition)%>%
+
   do(tidy(lm(rating ~ block_number, data = .))) %>% 
-  filter(term == "block_number") %>%    
+  filter(term == "block_number") %>% 
   select(workerid, condition, estimate) 
 
 merged_data <- combined_data %>%
@@ -254,7 +260,7 @@ merged_data <- combined_data %>%
 
 merged_trial_means= merged_data %>%
   group_by(workerid, condition)%>%
-  summarise(estimate = mean(estimate), meaning_confidence = mean(meaning_confidence))
+  summarise(estimate = mean(estimate),meaning_confidence = mean(meaning_confidence))
 
 confidence_slope_plot <- ggplot(merged_data, aes(x=meaning_confidence, y=estimate, color = condition, fill = condition)) + 
 #  geom_point(data=merged1_trial_means,alpha=.9) + 
@@ -274,7 +280,7 @@ confidence_slope_faceted <- confidence_slope_plot + facet_wrap(~condition, scale
 confidence_slope_faceted
 ```
 
-# Analysis 
+# Analysis
 
 Which conditions satiated?
 
