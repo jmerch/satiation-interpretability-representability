@@ -21,6 +21,7 @@ library(brms)
 library(bootstrap)
 library(ggpubr)
 library(broom)    
+library(entropy)
 
 `%notin%` <- Negate(`%in%`)
 ```
@@ -89,13 +90,13 @@ Both groups did the same set of tasks, but in different order. We hope we can us
 #Read data file#
 raw_data_path1 <- "../pilot_2a_ling145/pilot_2a_ling145-trials.csv"
 data1<-read.csv(raw_data_path1)
-non_native_1 = c(46,127,57,36,39,63,113,128)
-data1<- subset(data1, workerid %notin% non_native_1)
+non_native_1 = c(46,127,57,36,39,63,105,113,128)
+#data1<- subset(data1, workerid %notin% non_native_1)
 
 raw_data_path2 <- "../pilot_2b_ling145/pilot_2b_ling145-trials.csv"
 data2<-read.csv(raw_data_path2)
-non_native_2 = c(118, 81, 96, 104, 124,64,25,31,38,107)
-data2<- subset(data2, workerid %notin% non_native_2)
+non_native_2 = c(118, 81, 96, 104, 124,64,25,31,38,107,137,138)
+#data2<- subset(data2, workerid %notin% non_native_2)
 ```
 
 # Visualization
@@ -155,7 +156,7 @@ satiation_plot_faceted2
 Here's a combined plot for the two groups:
 
 ```{r}
-combined_data = rbind(data_no_practice1,data_no_practice2)
+combined_data = rbind.fill(data_no_practice1,data_no_practice2)
 trial_means = combined_data %>%
   group_by(block_number,condition) %>%
   summarise(rating = mean(rating))
@@ -280,6 +281,115 @@ confidence_slope_faceted <- confidence_slope_plot + facet_wrap(~condition, scale
 confidence_slope_faceted
 ```
 
+### Entropy Plots
+
+The meaning types are labeled by hand. Let's first plot Group A's meaning entropy (Hm) for each participant-condition combination against the satiation rates:
+
+```{r}
+data_no_fill1 <- subset(data_no_practice1, condition %notin% c("gram","ungram"))
+entropy_results_1 <- data_no_fill1 %>%
+  group_by(workerid, condition) %>%
+  summarize(Hm = entropy(table(meaning_type)))
+
+merged_data1_with_Hm <- merged_data1 %>%
+  filter(condition %notin% c("gram","ungram"))%>%
+  left_join(entropy_results_1, by = c("workerid", "condition"))
+
+
+merged_Hm1_means= merged_data1_with_Hm %>%
+  group_by(workerid, condition)%>%
+  summarise(estimate = mean(estimate), Hm = mean(Hm))
+
+Hm_plot_1 <- ggplot(merged_data1_with_Hm, aes(x=Hm, y=estimate, color = condition, fill = condition)) + 
+  geom_point(data=merged_Hm1_means,alpha=.9) + 
+  # scale_color_manual(values=cbPalette) +
+  #  scale_fill_manual(values=cbPalette) +
+  xlab("Hm") +
+  ylab("Satiation Rate")+
+  geom_smooth(method=lm)+theme_bw()
+Hm_plot_1
+
+```
+
+Let's facet the above plot by condition:
+
+```{r}
+
+Hm_plot_1_faceted <- Hm_plot_1 + facet_wrap(~condition, scales = "fixed")+theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+Hm_plot_1_faceted
+```
+
+```{r}
+
+
+```
+
+Turning to Group B, let's create a entropy (for each condition-workerid pair) - satiation rate plot:
+
+```{r}
+data_no_fill2 <- subset(data_no_practice2, condition %notin% c("gram","ungram"))
+entropy_results_2 <- data_no_fill2 %>%
+  group_by(workerid, condition) %>%
+  summarize(Hm = entropy(table(meaning_type)))
+
+merged_data2_with_Hm <- merged_data2 %>%
+  filter(condition %notin% c("gram","ungram"))%>%
+  left_join(entropy_results_2, by = c("workerid", "condition"))
+
+
+merged_Hm2_means= merged_data2_with_Hm %>%
+  group_by(workerid, condition)%>%
+  summarise(estimate = mean(estimate), Hm = mean(Hm))
+
+Hm_plot_2 <- ggplot(merged_data2_with_Hm, aes(x=Hm, y=estimate, color = condition, fill = condition)) + 
+  geom_point(data=merged_Hm2_means,alpha=.9) + 
+  # scale_color_manual(values=cbPalette) +
+  #  scale_fill_manual(values=cbPalette) +
+  xlab("Hm") +
+  ylab("Satiation Rate")+
+  geom_smooth(method=lm)+theme_bw()
+Hm_plot_2
+```
+
+This is too messy. Let's facet by condition:
+
+```{r}
+Hm_plot_2_faceted <- Hm_plot_2 + facet_wrap(~condition, scales = "fixed")+theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+Hm_plot_2_faceted
+```
+
+```{r}
+
+```
+
+Collapsing the two groups:
+
+```{r}
+
+
+merged_data_with_Hm <- rbind.fill(merged_data1_with_Hm,merged_data2_with_Hm)
+
+merged_Hm_means= merged_data_with_Hm %>%
+  group_by(workerid, condition)%>%
+  summarise(estimate = mean(estimate), Hm = mean(Hm))
+
+Hm_plot <- ggplot(merged_data_with_Hm, aes(x=Hm, y=estimate, color = condition, fill = condition)) + 
+  geom_point(data=merged_Hm_means,alpha=.9) + 
+  # scale_color_manual(values=cbPalette) +
+  #  scale_fill_manual(values=cbPalette) +
+  xlab("Hm") +
+  ylab("Satiation Rate")+
+  geom_smooth(method=lm)+theme_bw()
+Hm_plot
+```
+
+Here's the merged plot faceted by condition:
+
+```{r}
+Hm_plot_faceted <- Hm_plot + facet_wrap(~condition, scales = "fixed")+theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+Hm_plot_faceted
+```
+
 # Analysis
 
 Which conditions satiated?
@@ -292,4 +402,26 @@ combined_data$condition <- relevel(combined_data$condition, ref = "gram")
 satiation_model <- lmer(rating ~ block_number*condition + 
                           (1+block_number|workerid) , data = combined_data)
 summary(satiation_model)
+```
+
+Does confidence rating predict satiation rate?
+
+```{r}
+merged_trial_means$condition <- factor(merged_trial_means$condition)
+merged_trial_means$condition <- relevel(merged_trial_means$condition, ref = "subj_island")
+
+
+
+conf_model <- lmer(estimate ~ meaning_confidence*condition + (1+meaning_confidence|workerid) , data = merged_trial_means)
+summary(conf_model)
+```
+
+Does entropy predict satiation rate?
+
+```{r}
+merged_Hm_means$condition <- factor(merged_Hm_means$condition)
+merged_Hm_means$condition <- relevel(merged_Hm_means$condition, ref = "subj_island")
+
+Hm_model <- lmer(estimate ~ Hm*condition + (1+Hm|workerid) , data = merged_Hm_means)
+summary(Hm_model)
 ```
